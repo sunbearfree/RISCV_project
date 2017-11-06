@@ -9,7 +9,7 @@ object processor_main {
 
   // Here the first program hard coded as an array
   var progr = Array[Int](0x00200093, 0x00300113, 0x13051200)
-  //val byteArrayTest = Files.readAllBytes(Paths.get())
+  val byteArrayTest = Files.readAllBytes(Paths.get())
   // As minimal RISC-V assembler example
 
   def main(args: Array[String]){
