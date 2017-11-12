@@ -1,5 +1,7 @@
 import scala.util.control.Breaks._
 import java.nio.file.{Files, Paths}
+import java.util
+import collection.mutable.HashMap
 
 object processor_main {
   var pc: Int = 0
@@ -7,14 +9,18 @@ object processor_main {
 
   val reg: Array[Int] = Array.fill[Int](31)(0)
 
+  var mem = new HashMap[Int,Int]() //Memory - kunne det klares med en Byte????
+
   // Here the first program hard coded as an array
-  var progr = Array[Int](0x00200093, 0x00300113, 0x13051200)
+//  var progr = Array[Int](0x00200093, 0x00300113, 0x13051200, 0x02532423)
+var progr = Array[Int](0x01400293, 0x02532423, 0x02832303) // load store test program
+
   //val byteArrayTest = Files.readAllLines(Paths.get("branchcnt.bin"))
   // As minimal RISC-V assembler example
 
   def main(args: Array[String]){
     println("Hello RISC-V World!")
-    println(byteArrayTest(1))
+    //println(byteArrayTest(1))
     pc = 0
     while (lc==0) {
       val instr: Int = progr(pc)
@@ -57,6 +63,8 @@ object processor_main {
           case _ => println("ERROR3_1"+func3)
         }                                                    //R done
         case 0x37 => reg(rd) = imm0<<16                             //LUI
+        case 0x23 =>  mem(reg(rs1)+imm1) = reg(rs2)                 //SW
+        case 0x3 => reg(rd) = mem(reg(rs1)+ imm1)                   //LW
         case _ => {
           println("Opcode " + opcode + " not yet implemented:")
           println("Opcode = " + opcode)
@@ -70,7 +78,7 @@ object processor_main {
         }
       }
       pc = pc + 1
-      for (i <- 0 until reg.length) print(reg(i) + " ")
+      for (i <- reg.indices) print(reg(i) + " ") // reg.indices = 0 until reg.length
       println()
       if (pc >= progr.length) {lc = 1}
     }
