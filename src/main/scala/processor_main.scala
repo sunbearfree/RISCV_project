@@ -13,7 +13,8 @@ object processor_main {
 
   // Here the first program hard coded as an array
 //  var progr = Array[Int](0x00200093, 0x00300113, 0x13051200, 0x02532423)
-var progr = Array[Int](0x7d000293, 0x02532423, 0x02832303) // load store test program
+//var progr = Array[Int](0x7d000293, 0x02532423, 0x02832303) // load store test program
+var progr = Array[Int](0xfec00293, 0x02532423, 0x02834303) // load store test program
 
   //val byteArrayTest = Files.readAllLines(Paths.get("branchcnt.bin"))
   // As minimal RISC-V assembler example
@@ -30,7 +31,7 @@ var progr = Array[Int](0x7d000293, 0x02532423, 0x02832303) // load store test pr
       val func7: Int = (instr >> 25) & 0x7f
       val rs1: Int = (instr >> 15) & 0x1f
       val rs2: Int = (instr >> 20) & 0x1f
-      val imm_I20: Int = (instr >> 20) & 0xfff
+      val imm_I20: Int = (instr >>> 20) & 0xfff // Kan dette og de andre gøres mere effektikvt
       val imm_S25: Int = (instr >> 25) & 0x7f
 
       opcode match {
@@ -50,7 +51,7 @@ var progr = Array[Int](0x7d000293, 0x02532423, 0x02832303) // load store test pr
           case 0x4 => reg(rd) = reg(rs1) ^ imm_I20                      //XORI
           case 0x5 => func7 match {
             case 0x0 => reg(rd) = reg(rs1) >> imm_I20                      //SRLI
-            case 0x1 => reg(rd) = reg(rs1) >> imm_I20                      //SRAI -- Korrekt?????
+            case 0x1 => reg(rd) = reg(rs1) >>> imm_I20                      //SRAI -- Korrekt?????
           }
           case 0x6 => reg(rd) = reg(rs1) | imm_I20                      //ORI
           case 0x7 => reg(rd) = reg(rs1) & imm_I20                      //ANDI
@@ -111,7 +112,7 @@ var progr = Array[Int](0x7d000293, 0x02532423, 0x02832303) // load store test pr
         }
       }
       pc = pc + 1
-      for (i <- reg.indices) print(reg(i) + " ") // reg.indices = 0 until reg.length
+      for (i <- reg.indices) print(reg(i).toHexString + " ") // reg.indices = 0 until reg.length
       println()
       if (pc >= progr.length) {lc = 1}
     }
