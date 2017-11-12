@@ -27,17 +27,39 @@ var progr = Array[Int](0x7d000293, 0x02532423, 0x02832303) // load store test pr
       val opcode: Int = instr & 0x7f
       val rd: Int = (instr >> 7) & 0x1f
       val func3: Int = (instr >> 12) & 0x7
+      val func7: Int = (instr >> 25) & 0x7f
       val rs1: Int = (instr >> 15) & 0x1f
       val rs2: Int = (instr >> 20) & 0x1f
-      val imm0: Int = (instr >> 20) & 0xfff
-      val func7: Int = (instr >> 25) & 0x7f
-      val imm1: Int = (instr >> 25) & 0x7f
+      val imm_I20: Int = (instr >> 20) & 0xfff
+      val imm_S25: Int = (instr >> 25) & 0x7f
 
       opcode match {
-        case 0x13 => reg(rd) = reg(rs1) + imm0                      //ADDI
+        case 0x13 => func3 match {
+          case 0x0 => reg(rd) = reg(rs1) + imm_I20                      //ADDI
+          case 0x1 => reg(rd) = reg(rs1) << imm_I20                     //SLLI
+          case 0x2 => if (reg(rd)<reg(rs1)) {                           //SLTI
+            reg(rd) = 1
+          } else {
+            reg(rd) = 0
+          }
+          case 0x3 => if (reg(rd)<reg(rs1)) {                           //SLTIU -- Korrekt??????
+            reg(rd) = 1
+          } else {
+            reg(rd)
+          }
+          case 0x4 => reg(rd) = reg(rs1) ^ imm_I20                      //XORI
+          case 0x5 => func7 match {
+            case 0x0 => reg(rd) = reg(rs1) >> imm_I20                      //SRLI
+            case 0x1 => reg(rd) = reg(rs1) >> imm_I20                      //SRAI -- Korrekt?????
+          }
+          case 0x6 => reg(rd) = reg(rs1) | imm_I20                      //ORI
+          case 0x7 => reg(rd) = reg(rs1) & imm_I20                      //ANDI
+        }
+        case 0x17 => reg(rd) = pc + imm_I20                              //AUIPC -- Korrekt?????
         case 0x33 => func3 match {                           //R
           case 0x0 => func7 match {                    //f7
             case 0x0 => reg(rd) = reg(rs1) + reg(rs2)               //ADD
+            case 0x4 => reg(rd) = reg(rs1)^reg(rs2)                 //XOR
             case 0x20 => reg(rd) = reg(rs1) - reg(rs2)              //SUB
             case _ => println("ERROR7_1"+func7)
           }
@@ -47,7 +69,7 @@ var progr = Array[Int](0x7d000293, 0x02532423, 0x02832303) // load store test pr
           } else{
             reg(rd) = 0
           }
-          case 0x3 => if(reg(rs1)<(imm0&0xFF)){                     //SLTU
+          case 0x3 => if(reg(rs1)<(imm_I20&0xFF)){                     //SLTU
             reg(rd) = 1
           } else{
             reg(rd) = 0
@@ -62,18 +84,18 @@ var progr = Array[Int](0x7d000293, 0x02532423, 0x02832303) // load store test pr
           case 0x7 => reg(rd) = reg(rs1) & reg(rs2)                 //AND
           case _ => println("ERROR3_1"+func3)
         }                                                    //R done
-        case 0x37 => reg(rd) = imm0<<16                             //LUI
+        case 0x37 => reg(rd) = imm_I20<<16                             //LUI
         case 0x23 => func3 match {                            // Store instructions
-          case 0x0 => mem(reg(rs1)+imm1) = reg(rs2)&0xFF // SB
-          case 0x1 => mem(reg(rs1)+imm1) = reg(rs2)&0xFFFF// SH
-          case 0x2 => mem(reg(rs1)+imm1) = reg(rs2)    //SW
+          case 0x0 => mem(reg(rs1)+imm_S25) = reg(rs2)&0xFF // SB
+          case 0x1 => mem(reg(rs1)+imm_S25) = reg(rs2)&0xFFFF// SH
+          case 0x2 => mem(reg(rs1)+imm_S25) = reg(rs2)    //SW
         }
         case 0x3 => func3 match {                             //Load instructions
-          case 0x0 => reg(rd) = mem(reg(rs1)+ imm1)&0XFF //LB
-          case 0x1 => reg(rd) = mem(reg(rs1)+ imm1)&0XFFFF //LH
-          case 0x2 => reg(rd) = mem(reg(rs1)+ imm1) //LW
-          case 0x4 => reg(rd) = mem(reg(rs1)+ imm1)&0XFF //LBU -- KORREKT????
-          case 0x5 => reg(rd) = mem(reg(rs1)+ imm1)&0XFFFF //LHU -- KORREKT????
+          case 0x0 => reg(rd) = mem(reg(rs1)+ imm_S25)&0XFF //LB
+          case 0x1 => reg(rd) = mem(reg(rs1)+ imm_S25)&0XFFFF //LH
+          case 0x2 => reg(rd) = mem(reg(rs1)+ imm_S25) //LW
+          case 0x4 => reg(rd) = mem(reg(rs1)+ imm_S25)&0XFF //LBU -- KORREKT????
+          case 0x5 => reg(rd) = mem(reg(rs1)+ imm_S25)&0XFFFF //LHU -- KORREKT????
         }
 
         case _ => {
@@ -83,9 +105,9 @@ var progr = Array[Int](0x7d000293, 0x02532423, 0x02832303) // load store test pr
           println("func3 = " + func3)
           println("rs1 = " + rs1)
           println("rs2 = " + rs2)
-          println("imm0 = " + imm0)
+          println("imm_I20 = " + imm_I20)
           println("func7 = " + func7)
-          println("imm1 = " + imm1)
+          println("imm_S25 = " + imm_S25)
         }
       }
       pc = pc + 1
