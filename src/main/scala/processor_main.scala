@@ -112,6 +112,7 @@ var progr = Array[Int](0xfec00293, 0x02532423, 0x02834303) // load store test pr
         }
       }
       pc = pc + 1
+     // for (i <- reg.indices) print(String.format("%4s", reg(i).toHexString).replace(' ', '0') + " ") // reg.indices = 0 until reg.length
       for (i <- reg.indices) print(reg(i).toHexString + " ") // reg.indices = 0 until reg.length
       println()
       if (pc >= progr.length) {lc = 1}
