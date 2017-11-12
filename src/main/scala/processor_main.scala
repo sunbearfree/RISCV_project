@@ -9,11 +9,11 @@ object processor_main {
 
   val reg: Array[Int] = Array.fill[Int](31)(0)
 
-  var mem = new HashMap[Int,Int]() //Memory - kunne det klares med en Byte????
+  var mem: HashMap[Int,Int] = new HashMap[Int,Int]() //Memory - kunne det klares med en Byte????
 
   // Here the first program hard coded as an array
 //  var progr = Array[Int](0x00200093, 0x00300113, 0x13051200, 0x02532423)
-var progr = Array[Int](0x01400293, 0x02532423, 0x02832303) // load store test program
+var progr = Array[Int](0x7d000293, 0x02532423, 0x02832303) // load store test program
 
   //val byteArrayTest = Files.readAllLines(Paths.get("branchcnt.bin"))
   // As minimal RISC-V assembler example
@@ -63,8 +63,19 @@ var progr = Array[Int](0x01400293, 0x02532423, 0x02832303) // load store test pr
           case _ => println("ERROR3_1"+func3)
         }                                                    //R done
         case 0x37 => reg(rd) = imm0<<16                             //LUI
-        case 0x23 =>  mem(reg(rs1)+imm1) = reg(rs2)                 //SW
-        case 0x3 => reg(rd) = mem(reg(rs1)+ imm1)                   //LW
+        case 0x23 => func3 match {                            // Store instructions
+          case 0x0 => mem(reg(rs1)+imm1) = reg(rs2)&0xFF // SB
+          case 0x1 => mem(reg(rs1)+imm1) = reg(rs2)&0xFFFF// SH
+          case 0x2 => mem(reg(rs1)+imm1) = reg(rs2)    //SW
+        }
+        case 0x3 => func3 match {                             //Load instructions
+          case 0x0 => reg(rd) = mem(reg(rs1)+ imm1)&0XFF //LB
+          case 0x1 => reg(rd) = mem(reg(rs1)+ imm1)&0XFFFF //LH
+          case 0x2 => reg(rd) = mem(reg(rs1)+ imm1) //LW
+          case 0x4 => reg(rd) = mem(reg(rs1)+ imm1)&0XFF //LBU -- KORREKT????
+          case 0x5 => reg(rd) = mem(reg(rs1)+ imm1)&0XFFFF //LHU -- KORREKT????
+        }
+
         case _ => {
           println("Opcode " + opcode + " not yet implemented:")
           println("Opcode = " + opcode)
