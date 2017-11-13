@@ -13,8 +13,8 @@ object processor_main {
 
   // Here the first program hard coded as an array
 //  var progr = Array[Int](0x00200093, 0x00300113, 0x13051200, 0x02532423)
-//var progr = Array[Int](0x7d000293, 0x02532423, 0x02832303) // load store test program
-var progr = Array[Int](0xfec00293, 0x02532423, 0x02834303) // load store test program
+var progr = Array[Int](0x7d000293, 0x02532423, 0x02832303) // load store test program
+//var progr = Array[Int](0x014002130, 0x00402023) // load store test program
 
   //val byteArrayTest = Files.readAllLines(Paths.get("branchcnt.bin"))
   // As minimal RISC-V assembler example
@@ -32,7 +32,10 @@ var progr = Array[Int](0xfec00293, 0x02532423, 0x02834303) // load store test pr
       val rs1: Int = (instr >> 15) & 0x1f
       val rs2: Int = (instr >> 20) & 0x1f
       val imm_I: Int = (instr >>> 20) & 0xfff // Kan dette og de andre gøres mere effektikvt
-      val imm_S: Int = (instr >> 25) & 0x7f
+      val imm_S: Int = (((instr >> 24) & 0x7f) << 5) ^ ((instr >> 6) & 0x1F)
+      //var imm_SB: Int =
+      //var imm_U:
+      //var imm_UJ:
 
       opcode match {
         case 0x13 => func3 match {
@@ -89,7 +92,7 @@ var progr = Array[Int](0xfec00293, 0x02532423, 0x02834303) // load store test pr
         case 0x23 => func3 match {                            // Store instructions
           case 0x0 => mem(reg(rs1)+imm_S) = reg(rs2)&0xFF // SB
           case 0x1 => mem(reg(rs1)+imm_S) = reg(rs2)&0xFFFF// SH
-          case 0x2 => mem(reg(rs1)+imm_S) = reg(rs2)    //SW
+          case 0x2 => mem(reg(rs1)+imm_S) = reg(rs2) //SW
         }
         case 0x3 => func3 match {                             //Load instructions
           case 0x0 => reg(rd) = mem(reg(rs1)+ imm_S)&0XFF //LB
@@ -98,7 +101,6 @@ var progr = Array[Int](0xfec00293, 0x02532423, 0x02834303) // load store test pr
           case 0x4 => reg(rd) = mem(reg(rs1)+ imm_S)&0XFF //LBU -- KORREKT????
           case 0x5 => reg(rd) = mem(reg(rs1)+ imm_S)&0XFFFF //LHU -- KORREKT????
         }
-
         case _ => {
           println("Opcode " + opcode + " not yet implemented:")
           println("Opcode = " + opcode)
@@ -111,6 +113,8 @@ var progr = Array[Int](0xfec00293, 0x02532423, 0x02834303) // load store test pr
           println("imm_S = " + imm_S)
         }
       }
+
+
       pc = pc + 1
      // for (i <- reg.indices) print(String.format("%4s", reg(i).toHexString).replace(' ', '0') + " ") // reg.indices = 0 until reg.length
       for (i <- reg.indices) print(reg(i).toHexString + " ") // reg.indices = 0 until reg.length
