@@ -13,8 +13,11 @@ object processor_main {
 
   // Here the first program hard coded as an array
 //  var progr = Array[Int](0x00200093, 0x00300113, 0x13051200, 0x02532423)
-var progr = Array[Int](0x7d000293, 0x02532423, 0x02832303) // load store test program
+//var progr = Array[Int](0x7d000293, 0x02532423, 0x02832303) // load store test program
 //var progr = Array[Int](0x014002130, 0x00402023) // load store test program
+  var progr = Array[Int](0x80100293, 0x0052a023, 0x0002a303)
+
+ // var progr = Array[Int](0x02532423)
 
   //val byteArrayTest = Files.readAllLines(Paths.get("branchcnt.bin"))
   // As minimal RISC-V assembler example
@@ -31,8 +34,8 @@ var progr = Array[Int](0x7d000293, 0x02532423, 0x02832303) // load store test pr
       val func7: Int = (instr >> 25) & 0x7f
       val rs1: Int = (instr >> 15) & 0x1f
       val rs2: Int = (instr >> 20) & 0x1f
-      val imm_I: Int = (instr >>> 20) & 0xfff // Kan dette og de andre gøres mere effektikvt
-      val imm_S: Int = (((instr >> 24) & 0x7f) << 5) ^ ((instr >> 6) & 0x1F)
+      val imm_I: Int = (instr >> 20) & 0xfff
+      val imm_S: Int = (((instr >> 25) & 0x7f) << 5) + ((instr >> 7) & 0x1F)
       //var imm_SB: Int =
       //var imm_U:
       //var imm_UJ:
@@ -95,11 +98,11 @@ var progr = Array[Int](0x7d000293, 0x02532423, 0x02832303) // load store test pr
           case 0x2 => mem(reg(rs1)+imm_S) = reg(rs2) //SW
         }
         case 0x3 => func3 match {                             //Load instructions
-          case 0x0 => reg(rd) = mem(reg(rs1)+ imm_S)&0XFF //LB
-          case 0x1 => reg(rd) = mem(reg(rs1)+ imm_S)&0XFFFF //LH
-          case 0x2 => reg(rd) = mem(reg(rs1)+ imm_S) //LW
-          case 0x4 => reg(rd) = mem(reg(rs1)+ imm_S)&0XFF //LBU -- KORREKT????
-          case 0x5 => reg(rd) = mem(reg(rs1)+ imm_S)&0XFFFF //LHU -- KORREKT????
+          case 0x0 => reg(rd) = mem(reg(rs1)+ imm_I)&0XFF //LB
+          case 0x1 => reg(rd) = mem(reg(rs1)+ imm_I)&0XFFFF //LH
+          case 0x2 => reg(rd) = mem(reg(rs1)+ imm_I) //LW
+          case 0x4 => reg(rd) = mem(reg(rs1)+ imm_I)&0XFF //LBU -- KORREKT????
+          case 0x5 => reg(rd) = mem(reg(rs1)+ imm_I)&0XFFFF //LHU -- KORREKT????
         }
         case _ => {
           println("Opcode " + opcode + " not yet implemented:")
