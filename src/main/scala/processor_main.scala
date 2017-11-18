@@ -21,7 +21,7 @@ object processor_main {
   //var progr = Array[Int](0xffe00093)
 
 
-  // As minimal RISC-V assembler example
+  // As minimal RISC-V assembler example  //lel
 
   def main(args: Array[String]) {
     println("Hello RISC-V World!")
