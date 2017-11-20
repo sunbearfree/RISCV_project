@@ -11,14 +11,14 @@ object processor_main {
   var mem: HashMap[Int,Int] = new HashMap[Int,Int]() //Memory - kunne det klares med en Byte????
 
   // Here the first program hard coded as an array
-  var progr: HashMap[Int,Int] = new HashMap[Int,Int]()
+  //var progr: HashMap[Int,Int] = new HashMap[Int,Int]()
 
   // self made test programs
   //var progr = Array[Int](0x00200093, 0x00300113, 0x13051200, 0x02532423)
   //var progr = Array[Int](0x7d000293, 0x02532423, 0x02832303) // load store test program
   //var progr = Array[Int](0x014002130, 0x00402023) // load store test program
   //var progr = Array[Int](0x80100293, 0x0052a023, 0x0002a303)
-  //var progr = Array[Int](0xffe00093)
+  var progr = Array[Int](0xffe00093)
 
 
   // As minimal RISC-V assembler example  //lel
@@ -26,7 +26,7 @@ object processor_main {
   def main(args: Array[String]) {
     println("Hello RISC-V World!")
 
-
+/*
     val programByteArray = Files.readAllBytes(Paths.get("addlarge.bin"))
     while (programLoopBreak < programByteArray.length) {
       val byteStr: Int = ((programByteArray(programLoopBreak + 3 & 0xff) << 24) + ((programByteArray(programLoopBreak + 2) & 0xff) << 16) + ((programByteArray(programLoopBreak + 1) & 0xff) << 8) + ((programByteArray(programLoopBreak)) & 0xff))
@@ -34,7 +34,7 @@ object processor_main {
       pc = pc + 1
       programLoopBreak = programLoopBreak + 4
     }
-
+*/
    /*      // test area begins
 
     val testVal: Int = 0
@@ -55,11 +55,22 @@ object processor_main {
       val func7: Int = (instr >> 25) & 0x7f
       val rs1: Int = (instr >> 15) & 0x1f
       val rs2: Int = (instr >> 20) & 0x1f
-      val imm_I: Int = (instr >> 20) & 0xfff
-      val imm_S: Int = (((instr >> 25) & 0x7f) << 5) + ((instr >> 7) & 0x1F)
-      val imm_SB: Int = (((instr >> 31) & 0x1) << 12) + (((instr >> 7) & 0x1) << 11) + (((instr >> 25) & 0x3f) << 5) + ((instr >> 8) & 0xf)
-      val imm_U: Int = (instr >> 12) & 0xfffff
-      val imm_UJ: Int = (((instr >> 31) & 0x1) << 20) + (((instr >> 12) & 0xff) << 12) + (((instr >> 20) & 0x1) << 11) + ((instr >> 21) & 0x3ff) // er usikker på denne her. skal testes
+
+      var imm_I: Int = (instr >> 20) & 0xfff
+      if((imm_I>>11)==1) imm_I = imm_I ^ 0xfffff000       // Check if negative
+
+      var imm_S: Int = ((((instr >> 25) & 0x7f) << 5) + ((instr >> 7) & 0x1F))& 0xfff
+      if((imm_S>>11)==1) imm_S = imm_S ^ 0xfffff000       // Check if negative
+
+      var imm_SB: Int = ((((instr >> 31) & 0x1) << 12) + (((instr >> 7) & 0x1) << 11) + (((instr >> 25) & 0x3f) << 5) + ((instr >> 8) & 0xf)) & 0xfff
+      if((imm_SB>>11)==1) imm_SB = imm_SB ^ 0xfffff000    // Check if negative
+
+      var imm_U: Int = (instr >> 12) & 0xfffff
+      if((imm_U>>11)==1) imm_U = imm_U ^ 0xfff00000       // Check if negative
+
+      var imm_UJ: Int = ((((instr >> 31) & 0x1) << 20) + (((instr >> 12) & 0xff) << 12) + (((instr >> 20) & 0x1) << 11) + ((instr >> 21) & 0x3ff)) & 0xfffff // er usikker på denne her. skal testes
+      if((imm_UJ>>11)==1) imm_UJ = imm_UJ ^ 0xfff00000    // Check if negative
+
 
       /*println("Opcode = " + opcode)
       println("rd = " + rd)
@@ -162,7 +173,7 @@ object processor_main {
         }
         case 0x67 => func3 match {
           case 0x0 => {
-            pc = pc + imm_I //JALR     Ikke færdig
+            pc = pc + (imm_I+reg(rs1)) //JALR     -- Korrekt?????
           }
           case _ => println("ERROR3_1" + func3)
         }
