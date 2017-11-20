@@ -11,14 +11,14 @@ object processor_main {
   var mem: HashMap[Int,Int] = new HashMap[Int,Int]() //Memory - kunne det klares med en Byte????
 
   // Here the first program hard coded as an array
-  //var progr: HashMap[Int,Int] = new HashMap[Int,Int]()
+  var progr: HashMap[Int,Int] = new HashMap[Int,Int]()
 
   // self made test programs
   //var progr = Array[Int](0x00200093, 0x00300113, 0x13051200, 0x02532423)
   //var progr = Array[Int](0x7d000293, 0x02532423, 0x02832303) // load store test program
   //var progr = Array[Int](0x014002130, 0x00402023) // load store test program
   //var progr = Array[Int](0x80100293, 0x0052a023, 0x0002a303)
-  var progr = Array[Int](0xffe00093)
+  //var progr = Array[Int](0xffe00093)
 
 
   // As minimal RISC-V assembler example  //lel
@@ -26,19 +26,19 @@ object processor_main {
   def main(args: Array[String]) {
     println("Hello RISC-V World!")
 
-/*
-    val programByteArray = Files.readAllBytes(Paths.get("addlarge.bin"))
+
+    val programByteArray = Files.readAllBytes(Paths.get("branchcnt.bin"))
     while (programLoopBreak < programByteArray.length) {
       val byteStr: Int = ((programByteArray(programLoopBreak + 3 & 0xff) << 24) + ((programByteArray(programLoopBreak + 2) & 0xff) << 16) + ((programByteArray(programLoopBreak + 1) & 0xff) << 8) + ((programByteArray(programLoopBreak)) & 0xff))
       progr(pc) = byteStr
-      pc = pc + 1
+      pc = pc + 4
       programLoopBreak = programLoopBreak + 4
     }
-*/
-   /*      // test area begins
+
+    /*     // test area begins
 
     val testVal: Int = 0
-    println("test "+progr(testVal).toBinaryString)
+    println("test "+pc)
     val instr: Int = progr(testVal)
     val imm_I: Int = (instr >> 20) & 0xfff
     println("test "+imm_I.toBinaryString)
@@ -46,8 +46,10 @@ object processor_main {
     */ // test area ends
 
     val programLength: Int = pc
+
     pc = 0
     while (loopBreak == 0) {
+      println("test "+pc)
       val instr: Int = progr(pc)
       val opcode: Int = instr & 0x7f
       val rd: Int = (instr >> 7) & 0x1f
@@ -62,7 +64,7 @@ object processor_main {
       var imm_S: Int = ((((instr >> 25) & 0x7f) << 5) + ((instr >> 7) & 0x1F))& 0xfff
       if((imm_S>>11)==1) imm_S = imm_S ^ 0xfffff000       // Check if negative
 
-      var imm_SB: Int = ((((instr >> 31) & 0x1) << 12) + (((instr >> 7) & 0x1) << 11) + (((instr >> 25) & 0x3f) << 5) + ((instr >> 8) & 0xf)) & 0xfff
+      var imm_SB: Int = ((((instr >> 31) & 0x1) << 12) + (((instr >> 7) & 0x1) << 11) + (((instr >> 25) & 0x3f) << 5) + (((instr >> 8) & 0xf) << 1)) & 0xfff
       if((imm_SB>>11)==1) imm_SB = imm_SB ^ 0xfffff000    // Check if negative
 
       var imm_U: Int = (instr >> 12) & 0xfffff
@@ -71,8 +73,8 @@ object processor_main {
       var imm_UJ: Int = ((((instr >> 31) & 0x1) << 20) + (((instr >> 12) & 0xff) << 12) + (((instr >> 20) & 0x1) << 11) + ((instr >> 21) & 0x3ff)) & 0xfffff // er usikker på denne her. skal testes
       if((imm_UJ>>11)==1) imm_UJ = imm_UJ ^ 0xfff00000    // Check if negative
 
-
-      /*println("Opcode = " + opcode)
+/*
+      println("Opcode = " + opcode)
       println("rd = " + rd)
       println("func3 = " + func3)
       println("func7 = " + func7)
@@ -82,8 +84,8 @@ object processor_main {
       println("imm_S = " + imm_S)
       println("imm_SB = " + imm_SB)
       println("imm_U = " + imm_U)
-      println("imm_UJ = " + imm_UJ)*/
-
+      println("imm_UJ = " + imm_UJ)
+*/
       opcode match {
         case 0x13 => func3 match {
           case 0x0 => reg(rd) = reg(rs1) + imm_I //ADDI
@@ -152,22 +154,22 @@ object processor_main {
         }
         case 0x63 => func3 match {
           case 0x0 => if (reg(rs1) == reg(rs2)) { //BEQ  -- ikke testet fra her og ned \/
-            pc = pc + imm_SB
+            pc = pc + (imm_SB<<1)
           }
           case 0x1 => if (reg(rs1) != reg(rs2)) { //BNE
-            pc = pc + imm_SB
+            pc = pc + (imm_SB<<1)
           }
           case 0x4 => if (reg(rs1) < reg(rs2)) { //BLT
-            pc = pc + imm_SB
+            pc = pc + (imm_SB<<1)
           }
           case 0x5 => if (reg(rs1) >= reg(rs2)) { //BGE
-            pc = pc + imm_SB
+            pc = pc + (imm_SB<<1)
           }
           case 0x6 => if (reg(rs1) < reg(rs2)) { //BLTU   -- Korrekt?????
-            pc = pc + imm_SB
+            pc = pc + (imm_SB<<1)
           }
           case 0x7 => if (reg(rs1) >= reg(rs2)) { //BGEU   -- Korrekt?????
-            pc = pc + imm_SB
+            pc = pc + (imm_SB<<1)
           }
           case _ => println("ERROR3_1" + func3)
         }
@@ -178,8 +180,8 @@ object processor_main {
           case _ => println("ERROR3_1" + func3)
         }
         case 0x6f => {
-          reg(rd) = imm_UJ //JAL
-          pc = pc + imm_UJ
+          reg(rd) = imm_I //JAL
+          pc = pc + (imm_I<<1)
         }
         case _ => {
           println("Opcode " + opcode + " not yet implemented:")
@@ -196,7 +198,7 @@ object processor_main {
           println("imm_UJ = " + imm_UJ)
         }
       }
-      pc = pc + 1
+      pc = pc + 4
       for (i <- reg.indices) print(reg(i) + " ") // reg.indices = 0 until reg.length
       println()
       if (pc >= programLength) {
