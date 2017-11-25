@@ -6,7 +6,7 @@ object processor_main {
   var programLoopBreak: Int = 0                                      //Break variable for program loading loop
   var loopBreak: Int = 0                                             //Break variable for main program loop
 
-  var reg: Array[Int] = Array.fill[Int](31)(0)                       //Register array
+  var reg: Array[Int] = Array.fill[Int](32)(0)                       //Register array
 
   var mem: HashMap[Int,Int] = new HashMap[Int,Int]()                 //Memory array - kunne det klares med en Byte????
 
@@ -17,7 +17,7 @@ object processor_main {
     println("Hello RISC-V World!\n")
 
     // Load bin file
-    val programByteArray = Files.readAllBytes(Paths.get("loop.bin"))
+    val programByteArray = Files.readAllBytes(Paths.get("addlarge.bin"))
     while (programLoopBreak < programByteArray.length) {
       val byteStr: Int = ((programByteArray(programLoopBreak + 3 & 0xff) << 24) + ((programByteArray(programLoopBreak + 2) & 0xff) << 16) + ((programByteArray(programLoopBreak + 1) & 0xff) << 8) + ((programByteArray(programLoopBreak)) & 0xff))
       progr(pc) = byteStr
@@ -186,8 +186,18 @@ object processor_main {
         loopBreak = 1
       }
     }
-    println("Register overview:")
+    println("Register overview (decimal):")
     for (i <- reg.indices) print(reg(i) + " ")
+    println("\n")
+
+    println("Register overview (hex):")
+    for (i <- reg.indices) {
+      print("%02d".format(i)+": ")
+      (1 to (8-reg(i).toHexString.length())).foreach(_ => print("0"))
+      print(reg(i).toHexString + "\n")
+    }
+    println("\n")
+    println("reg.length: "+reg.length)
     println("\n")
     println("Program exit")
   }
