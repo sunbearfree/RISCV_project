@@ -113,11 +113,11 @@ object processor_main {
           case _ => println("ERROR3_1" + func3)
         }
         case 0x3 => func3 match {                                               //Load instructions
-          case 0x0 => reg(rd) = mem(reg(rs1) + imm_I) & 0XFF        //LB
-          case 0x1 => reg(rd) = mem(reg(rs1) + imm_I) & 0XFFFF      //LH
-          case 0x2 => reg(rd) = mem(reg(rs1) + imm_I)               //LW
-          case 0x4 => reg(rd) = mem(reg(rs1) + imm_I) & 0XFF        //LBU -- KORREKT????
-          case 0x5 => reg(rd) = mem(reg(rs1) + imm_I) & 0XFFFF      //LHU -- KORREKT????
+          case 0x0 => reg(rd) = mem.getOrElse(reg(rs1) + imm_I, 0) & 0XFF        //LB
+          case 0x1 => reg(rd) = mem.getOrElse(reg(rs1) + imm_I, 0) & 0XFFFF      //LH
+          case 0x2 => reg(rd) = mem.getOrElse(reg(rs1) + imm_I, 0)               //LW
+          case 0x4 => reg(rd) = mem.getOrElse(reg(rs1) + imm_I, 0) & 0XFF        //LBU -- KORREKT????
+          case 0x5 => reg(rd) = mem.getOrElse(reg(rs1) + imm_I, 0) & 0XFFFF      //LHU -- KORREKT????
           case _ => println("ERROR3_1" + func3)
         }
         case 0x63 => func3 match {
