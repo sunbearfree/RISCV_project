@@ -11,7 +11,7 @@ object processor_main {
   reg(1) = 0x7ffffff0 // Initial state in venus for some reason
   reg(2) = 0x10000000
 
-  var mem: HashMap[Int,Int] = new HashMap[Int,Int]()                 //Memory array - kunne det klares med en Byte????
+  var mem: HashMap[Int,Int] = new HashMap[Int,Int]()                 //Memory array
 
   var progr: HashMap[Int,Int] = new HashMap[Int,Int]()               //program array
 
@@ -67,27 +67,28 @@ object processor_main {
           } else {
             reg(rd) = 0
           }
-          case 0x3 => if (reg(rd) < imm_I) {                        //SLTIU -- Korrekt??????
+          case 0x3 => if (reg(rd) < imm_I) {                        //SLTIU
             reg(rd) = 1
           } else {
             reg(rd)
           }
           case 0x4 => reg(rd) = reg(rs1) ^ imm_I                    //XORI
           case 0x5 => func7 match {
-            case 0x0 => reg(rd) = reg(rs1) >>> imm_I                 //SRLI
+            case 0x0 => reg(rd) = reg(rs1) >>> imm_I                //SRLI
             case 0x20 => reg(rd) = reg(rs1) >> imm_I                //SRAI
             case _ => println("ERROR7" + func3)
           }
           case 0x6 => reg(rd) = reg(rs1) | imm_I                    //ORI
           case 0x7 => reg(rd) = reg(rs1) & imm_I                    //ANDI
-          case _ => println("ERROR3_1" + func3)
+          case _ => println("ERROR3" + func3)
         }
         case 0x17 => reg(rd) = pc + (imm_U << 12)                   //AUIPC
         case 0x33 => func3 match { //R
           case 0x0 => func7 match { //f7
             case 0x0 => reg(rd) = reg(rs1) + reg(rs2)               //ADD
             case 0x20 => reg(rd) = reg(rs1) - reg(rs2)              //SUB
-            case _ => println("ERROR7_1" + func7)
+            case 0x1 => reg(rd) = reg(rs1) * reg(rs2)               //MUL
+            case _ => println("ERROR7" + func7)
           }
           case 0x1 => reg(rd) = reg(rs1) << reg(rs2)                //SLL
           case 0x2 => if (reg(rs1) < reg(rs2)) {                    //SLT
@@ -95,35 +96,43 @@ object processor_main {
           } else {
             reg(rd) = 0
           }
-          case 0x3 => if (reg(rs1) < reg(rs2)) {                    //SLTU  -- Korrekt?????
+          case 0x3 => if (reg(rs1) < reg(rs2)) {                    //SLTU
             reg(rd) = 1
           } else {
             reg(rd) = 0
           }
-          case 0x4 => reg(rd) = reg(rs1) ^ reg(rs2)                 //XOR
+          case 0x4 => func7 match {   //f7
+            case 0x0 => reg (rd) = reg (rs1) ^ reg (rs2)            //XOR
+            case 0x1 => reg (rd) = reg (rs1) / reg (rs2)            //DIV
+            case _ => println("ERROR7" + func7)
+          }
           case 0x5 => func7 match { //f7
             case 0x0 => reg(rd) = reg(rs1) >>> reg(rs2)             //SRL
             case 0x20 => reg(rd) = reg(rs1) >> reg(rs2)             //SRA
-            case _ => println("ERROR7_2" + func7)
+            case _ => println("ERROR7" + func7)
           }
-          case 0x6 => reg(rd) = reg(rs1) | reg(rs2)                 //OR
+          case 0x6 => func7 match {
+            case 0x0 =>reg(rd) = reg(rs1) | reg(rs2)                //OR
+            case 0x1 =>reg(rd) = reg(rs1) % reg(rs2)                //REM
+            case _ => println("ERROR7" + func7)
+          }
           case 0x7 => reg(rd) = reg(rs1) & reg(rs2)                 //AND
-          case _ => println("ERROR3_1" + func3)
+          case _ => println("ERROR3" + func3)
         } //R done
         case 0x37 => reg(rd) = imm_U << 12                          //LUI
         case 0x23 => func3 match {                                              // Store instructions
           case 0x0 => mem(reg(rs1) + imm_S) = reg(rs2) & 0xFF       //SB
           case 0x1 => mem(reg(rs1) + imm_S) = reg(rs2) & 0xFFFF     //SH
           case 0x2 => mem(reg(rs1) + imm_S) = reg(rs2)              //SW
-          case _ => println("ERROR3_1" + func3)
+          case _ => println("ERROR3" + func3)
         }
         case 0x3 => func3 match {                                               //Load instructions
-          case 0x0 => reg(rd) = mem.getOrElse(reg(rs1) + imm_I, 0) & 0XFF        //LB
-          case 0x1 => reg(rd) = mem.getOrElse(reg(rs1) + imm_I, 0) & 0XFFFF      //LH
-          case 0x2 => reg(rd) = mem.getOrElse(reg(rs1) + imm_I, 0)               //LW
-          case 0x4 => reg(rd) = mem.getOrElse(reg(rs1) + imm_I, 0) & 0XFF        //LBU -- KORREKT????
-          case 0x5 => reg(rd) = mem.getOrElse(reg(rs1) + imm_I, 0) & 0XFFFF      //LHU -- KORREKT????
-          case _ => println("ERROR3_1" + func3)
+          case 0x0 => reg(rd) = mem.getOrElse(reg(rs1) + imm_I, 0) & 0XFF     //LB
+          case 0x1 => reg(rd) = mem.getOrElse(reg(rs1) + imm_I, 0) & 0XFFFF   //LH
+          case 0x2 => reg(rd) = mem.getOrElse(reg(rs1) + imm_I, 0)            //LW
+          case 0x4 => reg(rd) = mem.getOrElse(reg(rs1) + imm_I, 0) & 0XFF     //LBU
+          case 0x5 => reg(rd) = mem.getOrElse(reg(rs1) + imm_I, 0) & 0XFFFF   //LHU
+          case _ => println("ERROR3" + func3)
         }
         case 0x63 => func3 match {
           case 0x0 => if (reg(rs2) == reg(rs1)) {                   //BEQ
@@ -138,24 +147,24 @@ object processor_main {
           case 0x5 => if (reg(rs1) >= reg(rs2)) {                   //BGE
             pc = pc + imm_SB - 4
           }
-          case 0x6 => if ((reg(rs1) & 0x7fffffff) < (reg(rs2) & 0x7fffffff)) {                    //BLTU   -- Korrekt?????
+          case 0x6 => if ((reg(rs1) & 0x7fffffff) < (reg(rs2) & 0x7fffffff)) {  //BLTU
             pc = pc + imm_SB - 4
           }
-          case 0x7 => if ((reg(rs1) & 0x7fffffff) >= (reg(rs2) & 0x7fffffff)) {                   //BGEU   -- Korrekt?????
+          case 0x7 => if ((reg(rs1) & 0x7fffffff) >= (reg(rs2) & 0x7fffffff)) { //BGEU
             pc = pc + imm_SB - 4
           }
-          case _ => println("ERROR3_1" + func3)
+          case _ => println("ERROR3" + func3)
         }
         case 0x67 => func3 match {
-          case 0x0 =>                                               //JALR     -- Korrekt?????
+          case 0x0 =>                                               //JALR
             reg(rd) = pc + 4
             pc = (reg(rs1)+imm_I) - 4
-          case _ => println("ERROR3_1" + func3)
+          case _ => println("ERROR3" + func3)
         }
         case 0x6f =>                                                //JAL
           reg(rd) = pc + 4
           pc = pc + imm_UJ - 4
-        case 0x73 =>  reg(10) match {                                             //ECALL
+        case 0x73 =>  reg(10) match {                               //ECALL
           case 0x1 => print(reg(11)) //not implemented
           case 0x4 => print(reg(11)) //not implemented
           case 0x9 => print(reg(11)) //not implemented
