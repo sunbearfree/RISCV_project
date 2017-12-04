@@ -9,6 +9,7 @@ object processor_main {
   var pc: Int = 0                                                    //Program counter
   var programLoopBreak: Int = 0                                      //Break variable for program loading loop
   var loopBreak: Int = 0                                             //Break variable for main program loop
+  var numrun: Int = 0
 
   var reg: Array[Int] = Array.fill[Int](32)(0)                       //Register array
   var output: Array[Byte] = Array.fill[Byte](128)(0)                 //Output byte array
@@ -24,7 +25,7 @@ object processor_main {
     println("Hello RISC-V World!\n")
 
     // Load bin file
-    val programByteArray = Files.readAllBytes(Paths.get("loop.bin"))
+    val programByteArray = Files.readAllBytes(Paths.get("t13.bin"))
     while (programLoopBreak < programByteArray.length) {
       val byteStr: Int =  ((programByteArray(programLoopBreak + 3) & 0xff) << 24) +
                           ((programByteArray(programLoopBreak + 2) & 0xff) << 16) +
@@ -48,12 +49,14 @@ object processor_main {
       val rs2: Int = (instr >> 20) & 0x1f
 
       var imm_I: Int = (instr >> 20) & 0xfff
+      val imm_I_U = imm_I
       if((imm_I>>11)==1) imm_I = imm_I ^ 0xfffff000                 // Check if negative
 
       var imm_S: Int = ((((instr >> 25) & 0x7f) << 5) + ((instr >> 7) & 0x1F))& 0xfff
       if((imm_S>>11)==1) imm_S = imm_S ^ 0xfffff000                 // Check if negative
 
       var imm_SB: Int = ((((instr >> 31) & 0x1) << 12) + (((instr >> 7) & 0x1) << 11) + (((instr >> 25) & 0x3f) << 5) + (((instr >> 8) & 0xf) << 1)) & 0xfff
+      val imm_SB_U = imm_SB
       if((imm_SB>>11)==1) imm_SB = imm_SB ^ 0xfffff000              // Check if negative
 
       var imm_U: Int = (instr >> 12) & 0xfffff
@@ -72,10 +75,10 @@ object processor_main {
           } else {
             reg(rd) = 0
           }
-          case 0x3 => if (reg(rd) < imm_I) {                        //SLTIU
+          case 0x3 => if (reg(rs1) < imm_I_U) {                        //SLTIU
             reg(rd) = 1
           } else {
-            reg(rd)
+            reg(rd) = 0
           }
           case 0x4 => reg(rd) = reg(rs1) ^ imm_I                    //XORI
           case 0x5 => func7 match {
@@ -153,10 +156,10 @@ object processor_main {
             pc = pc + imm_SB - 4
           }
           case 0x6 => if ((reg(rs1) & 0x7fffffff) < (reg(rs2) & 0x7fffffff)) {  //BLTU
-            pc = pc + imm_SB - 4
+            pc = pc + imm_SB_U - 4
           }
           case 0x7 => if ((reg(rs1) & 0x7fffffff) >= (reg(rs2) & 0x7fffffff)) { //BGEU
-            pc = pc + imm_SB - 4
+            pc = pc + imm_SB_U - 4
           }
           case _ => println("ERROR3" + func3)
         }
@@ -200,6 +203,17 @@ object processor_main {
       reg(0) = 0
       pc = pc + 4                                                   //Add to program counter
 
+      print("Run numer: ")
+      print(numrun)
+      print(" Instruction: 0x")
+      (1 to (8-instr.toHexString.length())).foreach(_ => print("0"))
+      print(instr.toHexString)
+      print(" Registers: ")
+      for (i <- reg.indices) print(reg(i) + " ")
+      println()
+
+      numrun = numrun + 1
+
       if (pc >= programLength) {
         loopBreak = 1
       }
@@ -224,7 +238,7 @@ object processor_main {
     }
 
     //register output to output.res
-    val bos = new BufferedOutputStream(new FileOutputStream("output.res"))
+    val bos = new BufferedOutputStream(new FileOutputStream("t13.res"))
     bos.write(output)
     bos.close()
 
