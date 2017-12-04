@@ -9,7 +9,6 @@ object processor_main {
   var pc: Int = 0                                                    //Program counter
   var programLoopBreak: Int = 0                                      //Break variable for program loading loop
   var loopBreak: Int = 0                                             //Break variable for main program loop
-  var numrun: Int = 0
 
   var reg: Array[Int] = Array.fill[Int](32)(0)                       //Register array
   var output: Array[Byte] = Array.fill[Byte](128)(0)                 //Output byte array
@@ -17,9 +16,9 @@ object processor_main {
   reg(1) = 0x7ffffff0 // Initial state in venus for some reason
   reg(2) = 0x10000000
 
-  var mem: HashMap[Int,Byte] = new HashMap[Int,Byte]()                 //Memory array
+  var mem: HashMap[Int,Byte] = new HashMap[Int,Byte]()               //Memory array
 
-  var progr: HashMap[Int,Int] = new HashMap[Int,Int]()               //program array
+  var progr: HashMap[Int,Int] = new HashMap[Int,Int]()               //Program array
 
   def main(args: Array[String]) {
     println("Hello RISC-V World!\n")
@@ -49,7 +48,6 @@ object processor_main {
       val rs2: Int = (instr >> 20) & 0x1f
 
       var imm_I: Int = (instr >> 20) & 0xfff
-      val imm_I_U = imm_I
       if((imm_I>>11)==1) imm_I = imm_I ^ 0xfffff000                 // Check if negative
 
       var imm_S: Int = ((((instr >> 25) & 0x7f) << 5) + ((instr >> 7) & 0x1F))& 0xfff
@@ -74,10 +72,11 @@ object processor_main {
           } else {
             reg(rd) = 0
           }
-          case 0x3 => if (reg(rs1) < imm_I_U) {                        //SLTIU
-            reg(rd) = 1
-          } else {
-            reg(rd) = 0
+          case 0x3 => {                                             //SLTIU
+            val tem1 = (reg(rs1).toLong << 32) >>> 32
+            val tem2 = (imm_I.toLong << 32) >>> 32
+            if (tem1 < tem2) reg(rd) = 1
+            else reg(rd) = 0
           }
           case 0x4 => reg(rd) = reg(rs1) ^ imm_I                    //XORI
           case 0x5 => func7 match {
@@ -119,7 +118,9 @@ object processor_main {
           }
           case 0x3 => func7 match {
             case 0x0 => {                                           //SLTU
-              if (reg(rs1) < reg(rs2)) reg(rd) = 1
+              val tem1 = (reg(rs1).toLong << 32) >>> 32
+              val tem2 = (reg(rs2).toLong << 32) >>> 32
+              if (tem1 < tem2) reg(rd) = 1
               else reg(rd) = 0
             }
             case 0x1 => {                                           //MULHU
@@ -141,8 +142,8 @@ object processor_main {
           case 0x5 => func7 match { //f7
             case 0x0 => reg(rd) = reg(rs1) >>> reg(rs2)             //SRL
             case 0x1 => {                                           //DIVU
-              var tem1 = (reg(rs1).toLong << 32) >>> 32
-              var tem2 = (reg(rs2).toLong << 32) >>> 32
+              val tem1 = (reg(rs1).toLong << 32) >>> 32
+              val tem2 = (reg(rs2).toLong << 32) >>> 32
               if (tem2 == 0.toLong) reg(rd) = reg(rs1)
               else reg(rd) = (tem1/tem2).toInt
             }
@@ -171,7 +172,7 @@ object processor_main {
           case _ => println("ERROR3" + func3)
         } //R done
         case 0x37 => reg(rd) = imm_U << 12                          //LUI
-        case 0x23 => func3 match {                                              // Store instructions
+        case 0x23 => func3 match {
           case 0x0 => {                                             //SB
             mem(reg(rs1) + imm_S) = reg(rs2).toByte
           }
@@ -187,31 +188,31 @@ object processor_main {
           }
           case _ => println("ERROR3" + func3)
         }
-        case 0x3 => func3 match {                                               //Load instructions
-          case 0x0 => {                                                       //LB
+        case 0x3 => func3 match {
+          case 0x0 => {                                             //LB
             val tem: Byte = mem.getOrElse(reg(rs1) + imm_I,0)
             reg(rd) = tem.toInt
           }
-          case 0x1 => {                                                       //LH
-            var tem1: Byte = mem.getOrElse(reg(rs1) + imm_I + 1, 0)
-            var tem2: Byte = mem.getOrElse(reg(rs1) + imm_I, 0)
+          case 0x1 => {                                             //LH
+            val tem1: Byte = mem.getOrElse(reg(rs1) + imm_I + 1, 0)
+            val tem2: Byte = mem.getOrElse(reg(rs1) + imm_I, 0)
             reg(rd) = ((tem1.toInt & 0xff) << 8) | tem2.toInt & 0xff
             if((reg(rd)>>15)==1) reg(rd) = reg(rd) ^ 0xffff0000
           }
-          case 0x2 => {                                                       //LW
-            var tem1: Byte = mem.getOrElse(reg(rs1) + imm_I + 3, 0)
-            var tem2: Byte = mem.getOrElse(reg(rs1) + imm_I + 2, 0)
-            var tem3: Byte = mem.getOrElse(reg(rs1) + imm_I + 1, 0)
-            var tem4: Byte = mem.getOrElse(reg(rs1) + imm_I, 0)
+          case 0x2 => {                                             //LW
+            val tem1: Byte = mem.getOrElse(reg(rs1) + imm_I + 3, 0)
+            val tem2: Byte = mem.getOrElse(reg(rs1) + imm_I + 2, 0)
+            val tem3: Byte = mem.getOrElse(reg(rs1) + imm_I + 1, 0)
+            val tem4: Byte = mem.getOrElse(reg(rs1) + imm_I, 0)
             reg(rd) = ((tem1.toInt & 0xff) << 24) | ((tem2.toInt & 0xff) << 16) | ((tem3.toInt & 0xff) << 8) | (tem4.toInt & 0xff)
           }
-          case 0x4 => {                                                       //LBU
-            var tem: Byte = mem.getOrElse(reg(rs1) + imm_I, 0)
+          case 0x4 => {                                             //LBU
+            val tem: Byte = mem.getOrElse(reg(rs1) + imm_I, 0)
             reg(rd) = tem.toInt & 0xff
           }
-          case 0x5 => {                                                       //LHU
-            var tem1: Byte = mem.getOrElse(reg(rs1) + imm_I + 1, 0)
-            var tem2: Byte = mem.getOrElse(reg(rs1) + imm_I, 0)
+          case 0x5 => {                                             //LHU
+            val tem1: Byte = mem.getOrElse(reg(rs1) + imm_I + 1, 0)
+            val tem2: Byte = mem.getOrElse(reg(rs1) + imm_I, 0)
             reg(rd) = ((tem1.toInt & 0xff) << 8) | tem2.toInt & 0xff
           }
           case _ => println("ERROR3" + func3)
@@ -229,11 +230,19 @@ object processor_main {
           case 0x5 => if (reg(rs1) >= reg(rs2)) {                   //BGE
             pc = pc + imm_SB - 4
           }
-          case 0x6 => if ((reg(rs1) & 0x7fffffff) < (reg(rs2) & 0x7fffffff)) {  //BLTU
-            pc = pc + imm_SB - 4
+          case 0x6 => {                                             //BLTU
+            val tem1 = (reg(rs1).toLong << 32) >>> 32
+            val tem2 = (reg(rs2).toLong << 32) >>> 32
+            if (tem1 < tem2) {
+              pc = pc + imm_SB - 4
+            }
           }
-          case 0x7 => if ((reg(rs1) & 0x7fffffff) >= (reg(rs2) & 0x7fffffff)) { //BGEU
-            pc = pc + imm_SB - 4
+          case 0x7 => {                                             //BGEU
+            val tem1 = (reg(rs1).toLong << 32) >>> 32
+            val tem2 = (reg(rs1).toLong << 32) >>> 32
+            if (tem1 >= tem2) {
+              pc = pc + imm_SB - 4
+            }
           }
           case _ => println("ERROR3" + func3)
         }
@@ -276,23 +285,6 @@ object processor_main {
 
       reg(0) = 0
       pc = pc + 4                                                   //Add to program counter
-
-      print("Opcode: ")
-      print(opcode.toHexString)
-      print(" func3: ")
-      print(func3.toHexString)
-      print(" func7: ")
-      print(func7.toHexString)
-      print(" Run numer: ")
-      print(numrun)
-      print(" Instruction: 0x")
-      (1 to (8-instr.toHexString.length())).foreach(_ => print("0"))
-      print(instr.toHexString)
-      print(" Registers: ")
-      for (i <- reg.indices) print(reg(i) + " ")
-      println()
-
-      numrun = numrun + 1
 
       if (pc >= programLength) {
         loopBreak = 1
