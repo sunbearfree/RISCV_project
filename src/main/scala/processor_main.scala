@@ -25,7 +25,7 @@ object processor_main {
     println("Hello RISC-V World!\n")
 
     // Load bin file
-    val programByteArray = Files.readAllBytes(Paths.get("t13.bin"))
+    val programByteArray = Files.readAllBytes(Paths.get("t1.bin"))
     while (programLoopBreak < programByteArray.length) {
       val byteStr: Int =  ((programByteArray(programLoopBreak + 3) & 0xff) << 24) +
                           ((programByteArray(programLoopBreak + 2) & 0xff) << 16) +
@@ -318,7 +318,7 @@ object processor_main {
     }
 
     //register output to output.res
-    val bos = new BufferedOutputStream(new FileOutputStream("t13.res"))
+    val bos = new BufferedOutputStream(new FileOutputStream("output.res"))
     bos.write(output)
     bos.close()
 
