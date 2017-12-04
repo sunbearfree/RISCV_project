@@ -97,33 +97,77 @@ object processor_main {
             case 0x1 => reg(rd) = reg(rs1) * reg(rs2)               //MUL
             case _ => println("ERROR7" + func7)
           }
-          case 0x1 => reg(rd) = reg(rs1) << reg(rs2)                //SLL
-          case 0x2 => if (reg(rs1) < reg(rs2)) {                    //SLT
-            reg(rd) = 1
-          } else {
-            reg(rd) = 0
+          case 0x1 => func7 match {
+            case 0x0 => reg (rd) = reg (rs1) << reg (rs2)           //SLL
+            case 0x1 => {                                           //MULH
+              val tem1 = (reg(rs1).toLong * reg(rs2).toLong) >>> 32
+              reg (rd) = tem1.toInt
+            }
+            case _ => println("ERROR7" + func7)
           }
-          case 0x3 => if (reg(rs1) < reg(rs2)) {                    //SLTU
-            reg(rd) = 1
-          } else {
-            reg(rd) = 0
+          case 0x2 => func7 match {
+            case 0x0 => {                                           //SLT
+              if (reg(rs1) < reg(rs2)) reg(rd) = 1
+              else reg(rd) = 0
+            }
+            case 0x1 => {                                           //MULHSU
+              val tem1 = reg(rs1).toLong
+              val tem2 = (reg(rs2).toLong << 32) >>> 32
+              reg(rd) = ((tem1 * tem2) >>> 32).toInt
+            }
+            case _ => println("ERROR7" + func7)
+          }
+          case 0x3 => func7 match {
+            case 0x0 => {                                           //SLTU
+              if (reg(rs1) < reg(rs2)) reg(rd) = 1
+              else reg(rd) = 0
+            }
+            case 0x1 => {                                           //MULHU
+              val tem1 = (reg(rs1).toLong << 32) >>> 32
+              val tem2 = (reg(rs2).toLong << 32) >>> 32
+              reg(rd) = ((tem1 * tem2) >>> 32).toInt
+            }
+            case _ => println("ERROR7" + func7)
           }
           case 0x4 => func7 match {   //f7
             case 0x0 => reg (rd) = reg (rs1) ^ reg (rs2)            //XOR
-            case 0x1 => reg (rd) = reg (rs1) / reg (rs2)            //DIV
+            case 0x1 => {                                           //DIV
+              if (reg(rs2) == 0) reg(rd) = -1
+              else if (reg(rs1) == 0xffffffff && reg(rs2) == -1) reg(rd) = reg(rs1)
+              else reg(rd) = reg(rs1) / reg(rs2)
+            }
             case _ => println("ERROR7" + func7)
           }
           case 0x5 => func7 match { //f7
             case 0x0 => reg(rd) = reg(rs1) >>> reg(rs2)             //SRL
+            case 0x1 => {                                           //DIVU
+              var tem1 = (reg(rs1).toLong << 32) >>> 32
+              var tem2 = (reg(rs2).toLong << 32) >>> 32
+              if (tem2 == 0.toLong) reg(rd) = reg(rs1)
+              else reg(rd) = (tem1/tem2).toInt
+            }
             case 0x20 => reg(rd) = reg(rs1) >> reg(rs2)             //SRA
             case _ => println("ERROR7" + func7)
           }
           case 0x6 => func7 match {
             case 0x0 =>reg(rd) = reg(rs1) | reg(rs2)                //OR
-            case 0x1 =>reg(rd) = reg(rs1) % reg(rs2)                //REM
+            case 0x1 =>{                                            //REM
+              if(reg(rs2)==0) reg(rd) = reg(rs1)
+              else if(reg(rs1) == 0xffffffff && reg(rs2) == -1) reg(rd) = 0
+              else reg(rd) = reg(rs1) % reg(rs2)
+            }
             case _ => println("ERROR7" + func7)
           }
-          case 0x7 => reg(rd) = reg(rs1) & reg(rs2)                 //AND
+          case 0x7 => func7 match {
+            case 0x0 => reg(rd) = reg(rs1) & reg(rs2)               //AND
+            case 0x1 => {                                           //REMU
+              val tem1 = (reg(rs1).toLong << 32) >>> 32
+              val tem2 = (reg(rs2).toLong << 32) >>> 32
+              if (tem2 == 0) reg(rd) = reg(rs1)
+              else reg(rd) = (tem1 % tem2).toInt
+            }
+            case _ => println("ERROR7" + func7)
+          }
           case _ => println("ERROR3" + func3)
         } //R done
         case 0x37 => reg(rd) = imm_U << 12                          //LUI
