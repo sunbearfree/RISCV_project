@@ -4,25 +4,24 @@ import java.nio.file.{Files, Paths}
 import collection.mutable.HashMap
 
 object processor_main {
-  var pc: Int = 0                                                    //Program counter
-  var programLoopBreak: Int = 0                                      //Break variable for program loading loop
-  var loopBreak: Int = 0                                             //Break variable for main program loop
+  var pc: Int = 0                                                   //Program counter
+  var programLoopBreak: Int = 0                                     //Break variable for program loading loop
+  var loopBreak: Int = 0                                            //Break variable for main program loop
 
-  var reg: Array[Int] = Array.fill[Int](32)(0)                       //Register array
-  var output: Array[Byte] = Array.fill[Byte](128)(0)                 //Output byte array
+  var reg: Array[Int] = Array.fill[Int](32)(0)                      //Register array
+  var output: Array[Byte] = Array.fill[Byte](128)(0)                //Output byte array
 
-  reg(1) = 0x7ffffff0 // Initial state in venus for some reason
+  reg(1) = 0x7ffffff0                                               //Initial state on pointers
   reg(2) = 0x10000000
 
-  var mem: HashMap[Int,Byte] = new HashMap[Int,Byte]()               //Memory array
+  var mem: HashMap[Int,Byte] = new HashMap[Int,Byte]()              //Memory array
 
-  var progr: HashMap[Int,Int] = new HashMap[Int,Int]()               //Program array
+  var progr: HashMap[Int,Int] = new HashMap[Int,Int]()              //Program array
 
   def main(args: Array[String]) {
     println("Hello RISC-V World!\n")
 
-    // Load bin file
-    val programByteArray = Files.readAllBytes(Paths.get("t1.bin"))
+    val programByteArray = Files.readAllBytes(Paths.get("t1.bin"))  // Load bin file
     while (programLoopBreak < programByteArray.length) {
       val byteStr: Int =  ((programByteArray(programLoopBreak + 3) & 0xff) << 24) +
                           ((programByteArray(programLoopBreak + 2) & 0xff) << 16) +
