@@ -25,7 +25,7 @@ object processor_main {
     println("Hello RISC-V World!\n")
 
     // Load bin file
-    val programByteArray = Files.readAllBytes(Paths.get("t11.bin"))
+    val programByteArray = Files.readAllBytes(Paths.get("t13.bin"))
     while (programLoopBreak < programByteArray.length) {
       val byteStr: Int =  ((programByteArray(programLoopBreak + 3) & 0xff) << 24) +
                           ((programByteArray(programLoopBreak + 2) & 0xff) << 16) +
@@ -129,58 +129,46 @@ object processor_main {
         case 0x37 => reg(rd) = imm_U << 12                          //LUI
         case 0x23 => func3 match {                                              // Store instructions
           case 0x0 => {                                             //SB
-            mem(reg(rs1) + imm_S) = (reg(rs2) & 0xff).toByte
-            //if((mem(reg(rs1) + imm_S)>>7)==1) mem(reg(rs1) + imm_S) = ((reg(rs1) + imm_S) ^ 0xffffff00).toByte
+            mem(reg(rs1) + imm_S) = reg(rs2).toByte
           }
           case 0x1 => {                                             //SH
-            mem(reg(rs1) + imm_S) = (reg(rs2) & 0xff).toByte
-            mem(reg(rs1) + imm_S+8) = ((reg(rs2) >> 8) & 0xff).toByte
-            //if((mem(reg(rs1) + imm_S)>>15)==1) mem(reg(rs1) + imm_S) = mem(reg(rs1) + imm_S) ^ 0xffff0000
+            mem(reg(rs1) + imm_S) = reg(rs2).toByte
+            mem(reg(rs1) + imm_S+1) = (reg(rs2) >>> 8).toByte
           }
           case 0x2 => {                                             //SW
-            mem(reg(rs1) + imm_S) = (reg(rs2) & 0xff).toByte
-            mem(reg(rs1) + imm_S+8) = ((reg(rs2) >> 8) & 0xff).toByte
-            mem(reg(rs1) + imm_S+16) = ((reg(rs2) >> 16) & 0xff).toByte
-            mem(reg(rs1) + imm_S+24) = ((reg(rs2) >> 24) & 0xff).toByte
+            mem(reg(rs1) + imm_S) = reg(rs2).toByte
+            mem(reg(rs1) + imm_S+1) = (reg(rs2) >>> 8).toByte
+            mem(reg(rs1) + imm_S+2) = (reg(rs2) >>> 16).toByte
+            mem(reg(rs1) + imm_S+3) = (reg(rs2) >>> 24).toByte
           }
           case _ => println("ERROR3" + func3)
         }
         case 0x3 => func3 match {                                               //Load instructions
           case 0x0 => {                                                       //LB
             val tem: Byte = mem.getOrElse(reg(rs1) + imm_I,0)
-
             reg(rd) = tem.toInt
-            //if((reg(rd)>>7)==1) reg(rd) = reg(rd) ^ 0xffffff00
           }
           case 0x1 => {                                                       //LH
-            //reg(rd) = mem.getOrElse(reg(rs1) + imm_I, 0) & 0xffff
-            //if((reg(rd)>>15)==1) reg(rd) = reg(rd) ^ 0xffff0000
-            var tem1: Byte = mem.getOrElse(reg(rs1) + imm_I + 8, 0)
+            var tem1: Byte = mem.getOrElse(reg(rs1) + imm_I + 1, 0)
             var tem2: Byte = mem.getOrElse(reg(rs1) + imm_I, 0)
-            reg(rd) = (tem1.toInt << 8)  +
-                      tem2.toInt
+            reg(rd) = ((tem1.toInt & 0xff) << 8) | tem2.toInt & 0xff
+            if((reg(rd)>>15)==1) reg(rd) = reg(rd) ^ 0xffff0000
           }
           case 0x2 => {                                                       //LW
-            //reg(rd) = mem.getOrElse(reg(rs1) + imm_I, 0)
-            var tem1: Byte = mem.getOrElse(reg(rs1) + imm_I + 24, 0)
-            var tem2: Byte = mem.getOrElse(reg(rs1) + imm_I + 16, 0)
-            var tem3: Byte = mem.getOrElse(reg(rs1) + imm_I + 8, 0)
+            var tem1: Byte = mem.getOrElse(reg(rs1) + imm_I + 3, 0)
+            var tem2: Byte = mem.getOrElse(reg(rs1) + imm_I + 2, 0)
+            var tem3: Byte = mem.getOrElse(reg(rs1) + imm_I + 1, 0)
             var tem4: Byte = mem.getOrElse(reg(rs1) + imm_I, 0)
-            val tem: Int = (tem1.toInt << 24) +
-                      (tem2.toInt << 16) +
-                      (tem3.toInt << 8)  +
-                      tem4.toInt
-            reg(rd) = tem.toInt
+            reg(rd) = ((tem1.toInt & 0xff) << 24) | ((tem2.toInt & 0xff) << 16) | ((tem3.toInt & 0xff) << 8) | (tem4.toInt & 0xff)
           }
           case 0x4 => {                                                       //LBU
             var tem: Byte = mem.getOrElse(reg(rs1) + imm_I, 0)
             reg(rd) = tem.toInt & 0xff
           }
           case 0x5 => {                                                       //LHU
-            var tem1: Byte = mem.getOrElse(reg(rs1) + imm_I + 8, 0)
+            var tem1: Byte = mem.getOrElse(reg(rs1) + imm_I + 1, 0)
             var tem2: Byte = mem.getOrElse(reg(rs1) + imm_I, 0)
-            reg(rd) = ((tem1.toInt << 8)  +
-                      tem2.toInt) & 0xffff
+            reg(rd) = ((tem1.toInt & 0xff) << 8) | tem2.toInt & 0xff
           }
           case _ => println("ERROR3" + func3)
         }
@@ -286,7 +274,7 @@ object processor_main {
     }
 
     //register output to output.res
-    val bos = new BufferedOutputStream(new FileOutputStream("output.res"))
+    val bos = new BufferedOutputStream(new FileOutputStream("t13.res"))
     bos.write(output)
     bos.close()
 
