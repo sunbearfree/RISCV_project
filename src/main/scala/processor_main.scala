@@ -205,26 +205,14 @@ object processor_main {
       }
     }
 
-    //println("Register overview (decimal):")
+    println("Register overview (decimal):")
     for (i <- reg.indices) {
-//      println("i:"+i)
-//      print(reg(i) + " ")
-    }
+      print(reg(i) + " ")
 
-    for (i <- 10 to 17) {
-      //print(reg(i) + " ")
-
-      output(i*4+0) = ((reg(i) >> 24) & 0xff).toByte
-      output(i*4+1) = ((reg(i) >> 16) & 0xff).toByte
-      output(i*4+2) = ((reg(i) >> 8) & 0xff).toByte
-      output(i*4+3) = (reg(i) & 0xff).toByte
-      println()
-      println("reg no.: "+i)
-      println()
-      println(i*4+0+":"+output(i*4+0).toHexString)
-      println(i*4+1+":"+output(i*4+1).toHexString)
-      println(i*4+2+":"+output(i*4+2).toHexString)
-      println(i*4+3+":"+output(i*4+3).toHexString)
+      output(i*4+3) = ((reg(i) >> 24) & 0xff).toByte
+      output(i*4+2) = ((reg(i) >> 16) & 0xff).toByte
+      output(i*4+1) = ((reg(i) >> 8) & 0xff).toByte
+      output(i*4+0) = (reg(i) & 0xff).toByte
     }
     println("\n")
 
