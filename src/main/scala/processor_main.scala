@@ -1,4 +1,8 @@
+import java.io.{BufferedOutputStream, FileOutputStream}
 import java.nio.file.{Files, Paths}
+import java.nio.{ByteBuffer, IntBuffer}
+import java.net
+
 import collection.mutable.HashMap
 
 object processor_main {
@@ -7,6 +11,7 @@ object processor_main {
   var loopBreak: Int = 0                                             //Break variable for main program loop
 
   var reg: Array[Int] = Array.fill[Int](32)(0)                       //Register array
+  var output: Array[Byte] = Array.fill[Byte](128)(0)                 //Output byte array
 
   reg(1) = 0x7ffffff0 // Initial state in venus for some reason
   reg(2) = 0x10000000
@@ -201,7 +206,14 @@ object processor_main {
     }
 
     println("Register overview (decimal):")
-    for (i <- reg.indices) print(reg(i) + " ")
+    for (i <- reg.indices) {
+      print(reg(i) + " ")
+
+      output(i*1) = ((reg(i) >> 24) & 0xff).toByte
+      output(i*2) = ((reg(i) >> 16) & 0xff).toByte
+      output(i*3) = ((reg(i) >> 8) & 0xff).toByte
+      output(i*3) = (reg(i) & 0xff).toByte
+    }
     println("\n")
 
     println("Register overview (hex):")
@@ -210,6 +222,11 @@ object processor_main {
       (1 to (8-reg(i).toHexString.length())).foreach(_ => print("0"))
       print(reg(i).toHexString + "\n")
     }
+
+    //register output to output.res
+    val bos = new BufferedOutputStream(new FileOutputStream("output.res"))
+    bos.write(output)
+    bos.close()
 
     println("Program exit")
   }
